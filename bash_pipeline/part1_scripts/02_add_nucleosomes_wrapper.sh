@@ -3,33 +3,19 @@
 # Prerequisites: conda environment with fibertools-rs and samtools
 # Usage: bash 02_add_nucleosomes_wrapper.sh
 
-### CONFIGURE: Set these paths for your environment ###
-SAMPLESHEET=""        # CONFIGURE: Path to your samplesheet TSV file
-WORKDIR=""            # CONFIGURE: Base output directory (same as step 1)
+### CONFIGURE ###
+SAMPLESHEET=""
+WORKDIR=""
 THREADS=48
-TMPDIR="${TMPDIR:-/tmp}"  # Uses system TMPDIR or /tmp as fallback
-FT_OPTIONS=""         # Optional: e.g., "--min-ml-score 150"
+TMPDIR="${TMPDIR:-/tmp}"
+FT_OPTIONS=""
 
-### VALIDATION ###
-if [[ -z "$SAMPLESHEET" || -z "$WORKDIR" ]]; then
-    echo "ERROR: Required variables not configured. Edit this script and set:"
-    echo "  - SAMPLESHEET: Path to your samplesheet TSV"
-    echo "  - WORKDIR: Base output directory"
-    exit 1
-fi
 
-### AUTO ###
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN="${SCRIPT_DIR}/02_add_nucleosomes_main.sh"
 
 mkdir -p "$TMPDIR"
 export TMPDIR
-
-echo "=== Add Nucleosomes Pipeline ==="
-echo "Samplesheet: $SAMPLESHEET"
-echo "Workdir: $WORKDIR"
-echo "Threads: $THREADS"
-echo "ft version: $(ft --version 2>&1)"
 
 tail -n +2 "$SAMPLESHEET" | while IFS=$'\t' read -r sample_name raw_bam_path tissue sequencer; do
     [[ -z "$sample_name" ]] && continue

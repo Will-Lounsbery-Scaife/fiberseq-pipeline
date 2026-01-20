@@ -1,17 +1,16 @@
 #!/bin/bash
-# Step 5: Pileup to bedGraph to bigWig (Parallelized)
+# Step 5: Pileup to bedGraph to bigWig
 
 SAMPLE_NAME=$1
 SAMPLE_DIR=$2
 GENOME_CHROMSIZES=$3
 BEDGRAPHTOBIGWIG=$4
 COLUMNS_STR=$5
-THREADS=${6:-4}  # Default to 4 if not provided
+THREADS=${6:-4}
 
 echo "[Step 5] Pileup to bigWig - ${SAMPLE_NAME} ($(date))"
-echo "Using $THREADS parallel jobs"
 
-# Parse columns string (format: mark1:col1,mark2:col2,...)
+# Parse columns string
 declare -A PILEUP_COLUMNS
 IFS=',' read -ra PAIRS <<< "$COLUMNS_STR"
 for pair in "${PAIRS[@]}"; do
@@ -19,23 +18,17 @@ for pair in "${PAIRS[@]}"; do
     PILEUP_COLUMNS[$mark]=$col
 done
 
-echo "Marks to calculate percentages for: ${!PILEUP_COLUMNS[*]}"
-
-# Locate input files
 PILEUP_DIR="$SAMPLE_DIR/04_pileups"
 [[ ! -d "$PILEUP_DIR" ]] && { echo "ERROR: Pileups directory not found: $PILEUP_DIR"; exit 1; }
 
-# Use mapfile for safe array population from find
 mapfile -t PILEUP_FILES < <(find "$PILEUP_DIR" -name "*.pileup.bed" -type f)
 [[ ${#PILEUP_FILES[@]} -eq 0 ]] && { echo "ERROR: No pileup files found"; exit 1; }
 
 echo "Found ${#PILEUP_FILES[@]} pileup file(s)"
 
-# Setup output
 BIGWIG_DIR="$SAMPLE_DIR/05_bigwigs"
 mkdir -p "$BIGWIG_DIR"
 
-# Create a temporary file to track results
 RESULTS_FILE=$(mktemp)
 trap "rm -f $RESULTS_FILE" EXIT
 
@@ -55,7 +48,6 @@ process_mark() {
     local BIGWIG_FILE="$BIGWIG_DIR/${PILEUP_BASENAME}.${mark}.bw"
     
     # Calculate percentage (mark_coverage / total_coverage) and create bedGraph
-    # Skip header lines (bedGraphToBigWig doesn't support headers)
     awk -F'\t' -v col="$COL_NUM" \
         '/^#/ {next} 
          $4 > 0 {printf "%s\t%s\t%s\t%.6f\n", $1, $2, $3, $col/$4}' \
@@ -75,14 +67,13 @@ process_mark() {
     echo "  Created: $(basename $BEDGRAPH_FILE) ($(du -h "$BEDGRAPH_FILE" | cut -f1))"
     echo "  Created: $(basename $BIGWIG_FILE) ($(du -h "$BIGWIG_FILE" | cut -f1))"
     
-    # Record success
     echo "$mark" >> "$RESULTS_FILE"
     return 0
 }
 
 export -f process_mark
 
-# Build list of jobs (pileup_file|mark|col_num)
+# Build list of jobs
 JOBS=()
 for PILEUP_FILE in "${PILEUP_FILES[@]}"; do
     [[ ! -s "$PILEUP_FILE" ]] && continue
@@ -94,11 +85,10 @@ done
 
 echo "Running ${#JOBS[@]} conversion jobs with up to $THREADS parallel workers..."
 
-# Run jobs in parallel using GNU parallel
+# Run jobs in parallel with GNU parallel
 printf '%s\n' "${JOBS[@]}" | parallel -j "$THREADS" --colsep '\|' \
     process_mark {1} {2} {3} "$PILEUP_DIR" "$BIGWIG_DIR" "$GENOME_CHROMSIZES" "$BEDGRAPHTOBIGWIG" "$RESULTS_FILE"
 
-# Count results
 TOTAL_BIGWIGS=$(wc -l < "$RESULTS_FILE" 2>/dev/null || echo 0)
 MARKS_SEEN=$(sort -u "$RESULTS_FILE" 2>/dev/null | tr '\n' ' ')
 

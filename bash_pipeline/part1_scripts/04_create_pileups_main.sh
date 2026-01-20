@@ -10,18 +10,10 @@ ML_THRESHOLD=$6
 
 echo "[Step 4] Create Pileups - ${SAMPLE_NAME} ($(date))"
 
-# Locate input files
 INPUT_BAM="$SAMPLE_DIR/02_nucleosomes/${SAMPLE_NAME}.ft.bam"
-[[ ! -f "$INPUT_BAM" ]] && { echo "ERROR: Nucleosome BAM not found: $INPUT_BAM"; exit 1; }
 
-if [[ ! -f "$INPUT_BAM.bai" && ! -f "$INPUT_BAM.pbi" ]]; then
-    echo "ERROR: No BAM index found (.bai or .pbi)"
-    exit 1
-fi
-
-# Setup output
 PILEUP_DIR="$SAMPLE_DIR/04_pileups"
-    mkdir -p "$PILEUP_DIR"
+mkdir -p "$PILEUP_DIR"
 
 if [[ -n "$REGION" ]]; then
     region_safe=$(echo "$REGION" | tr ':,-' '_')
@@ -30,11 +22,7 @@ else
     OUTPUT_PILEUP="$PILEUP_DIR/${SAMPLE_NAME}.genome_wide.pileup.bed"
 fi
 
-# Build ft pileup command using array for safety
-echo "Input: $INPUT_BAM"
-echo "Output: $OUTPUT_PILEUP"
-[[ -n "$REGION" ]] && echo "Region: $REGION" || echo "Region: genome-wide"
-
+# Build ft pileup command
 ft_args=("pileup" "-t" "$THREADS" "-m" "-c")
 [[ -n "$FT_PILEUP_OPTIONS" ]] && read -ra opts <<< "$FT_PILEUP_OPTIONS" && ft_args+=("${opts[@]}")
 [[ -n "$ML_THRESHOLD" ]] && ft_args+=("--ml" "$ML_THRESHOLD")

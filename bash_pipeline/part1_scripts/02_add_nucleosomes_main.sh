@@ -8,17 +8,12 @@ FT_OPTIONS=$4
 
 echo "[Step 2] Add Nucleosomes - ${SAMPLE_NAME} ($(date))"
 
-# Locate input files
 INPUT_BAM="$SAMPLE_DIR/01_aligned/${SAMPLE_NAME}.aligned.bam"
 
-# Setup output
+
 NUCLEOSOME_DIR="$SAMPLE_DIR/02_nucleosomes"
     mkdir -p "$NUCLEOSOME_DIR"
 OUTPUT_BAM="$NUCLEOSOME_DIR/${SAMPLE_NAME}.ft.bam"
-
-# Run fibertools add-nucleosomes
-echo "Input: $INPUT_BAM"
-echo "Output: $OUTPUT_BAM"
 
 FT_CMD="ft add-nucleosomes -t $THREADS"
 [[ -n "$FT_OPTIONS" ]] && FT_CMD="$FT_CMD $FT_OPTIONS"

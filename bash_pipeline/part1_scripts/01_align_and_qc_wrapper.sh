@@ -14,32 +14,16 @@ THREADS=12
 PRESET="HIFI"         # Options: SUBREAD, CCS, HIFI, ISOSEQ, UNROLLED
 TMPDIR="${TMPDIR:-/tmp}"  # Uses system TMPDIR or /tmp as fallback
 
-### VALIDATION ###
-if [[ -z "$SAMPLESHEET" || -z "$REFERENCE_FASTA" || -z "$WORKDIR" ]]; then
-    echo "ERROR: Required variables not configured. Edit this script and set:"
-    echo "  - SAMPLESHEET: Path to your samplesheet TSV"
-    echo "  - REFERENCE_FASTA: Path to reference genome FASTA"
-    echo "  - WORKDIR: Base output directory"
-    exit 1
-fi
-
-### AUTO ###
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN="${SCRIPT_DIR}/01_align_and_qc_main.sh"
 
 mkdir -p "$WORKDIR" "$TMPDIR"
 export TMPDIR SMRT_ROOT
 
-echo "=== Alignment and QC Pipeline ==="
-echo "Samplesheet: $SAMPLESHEET"
-echo "Reference: $REFERENCE_FASTA"
-echo "Workdir: $WORKDIR"
-echo "Threads: $THREADS, Preset: $PRESET"
-
 tail -n +2 "$SAMPLESHEET" | while IFS=$'\t' read -r sample_name raw_bam_path tissue sequencer; do
     [[ -z "$sample_name" ]] && continue
 
-    echo "--- Processing: $sample_name ---"
+    echo "Processing: $sample_name"
     [[ ! -f "$raw_bam_path" ]] && { echo "ERROR: BAM not found: $raw_bam_path"; continue; }
 
     bash "$MAIN" "$sample_name" "${WORKDIR}/${sample_name}" "$raw_bam_path" "$REFERENCE_FASTA" "$THREADS" "$PRESET"

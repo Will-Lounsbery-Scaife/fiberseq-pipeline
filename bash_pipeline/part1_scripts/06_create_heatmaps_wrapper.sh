@@ -11,7 +11,7 @@ WORKDIR=""            # CONFIGURE: Base output directory (same as step 1)
 REGIONS_BED=""        # CONFIGURE: BED file with regions for heatmaps (e.g., promoters)
 SINGULARITY_IMAGE=""  # CONFIGURE: Path to deepTools Singularity container (.sif)
 THREADS=24
-TMPDIR="${TMPDIR:-/tmp}"  # Uses system TMPDIR or /tmp as fallback
+TMPDIR="${TMPDIR:-/tmp}"
 
 # Matrix parameters
 MATRIX_MODE="reference-point"  # or "scale-regions"
@@ -31,17 +31,7 @@ CPG_COLORMAP="Reds"
 COMBINED_COLORMAP="RdYlBu_r"
 MARKS_TO_PLOT=("perc_m6a" "perc_nuc" "perc_cpg")  # m6A must be first - it sets row order for all heatmaps
 
-### VALIDATION ###
-if [[ -z "$SAMPLESHEET" || -z "$WORKDIR" || -z "$REGIONS_BED" || -z "$SINGULARITY_IMAGE" ]]; then
-    echo "ERROR: Required variables not configured. Edit this script and set:"
-    echo "  - SAMPLESHEET: Path to your samplesheet TSV"
-    echo "  - WORKDIR: Base output directory"
-    echo "  - REGIONS_BED: BED file with regions for heatmaps"
-    echo "  - SINGULARITY_IMAGE: Path to deepTools Singularity container"
-    exit 1
-fi
 
-### AUTO ###
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN="${SCRIPT_DIR}/06_create_heatmaps_main.sh"
 

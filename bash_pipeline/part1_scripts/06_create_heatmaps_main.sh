@@ -83,7 +83,7 @@ for mark in "${MARKS[@]}"; do
     echo "Processing mark: $mark"
     
     # Determine which regions file to use and whether to filter zeros:
-    # - First mark (m6A): use original REGIONS_BED, sort by signal (default), skip all-zero rows
+    # - First mark (m6A): use original REGIONS_BED, sort by signal, skip all-zero rows
     # - Subsequent marks: use sorted/filtered regions from m6A to maintain same row order
     if [[ -n "$MASTER_SORTED_BED" && -f "$MASTER_SORTED_BED" ]]; then
         CURRENT_REGIONS="$MASTER_SORTED_BED"
