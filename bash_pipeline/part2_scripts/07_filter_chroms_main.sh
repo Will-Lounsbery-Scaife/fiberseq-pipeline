@@ -44,20 +44,8 @@ else
     samtools view -@ "$FILTER_THREADS" -b -h "$SOURCE_BAM" > "$FILTERED_BAM"
 fi
 
-if [[ ! -f "$FILTERED_BAM" ]]; then
-    echo "ERROR: Output BAM was not created successfully."
-    exit 1
-fi
-
-echo "Indexing filtered BAM..."
 samtools index -@ "$FILTER_THREADS" "$FILTERED_BAM"
 INDEX_EXIT=$?
-
-if [[ $INDEX_EXIT -ne 0 ]]; then
-    echo "ERROR: samtools index failed (exit: $INDEX_EXIT)"
-    rm -f "$FILTERED_BAM" "${FILTERED_BAM}.bai"
-    exit 1
-fi
 
 # Summary
 SUMMARY_FILE="${OUTPUT_DIR}/${SAMPLE_NAME}.filtered_summary.txt"

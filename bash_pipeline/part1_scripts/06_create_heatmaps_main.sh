@@ -82,19 +82,16 @@ for mark in "${MARKS[@]}"; do
     
     echo "Processing mark: $mark"
     
-    # Determine which regions file to use and whether to filter zeros:
     # - First mark (m6A): use original REGIONS_BED, sort by signal, skip all-zero rows
     # - Subsequent marks: use sorted/filtered regions from m6A to maintain same row order
     if [[ -n "$MASTER_SORTED_BED" && -f "$MASTER_SORTED_BED" ]]; then
         CURRENT_REGIONS="$MASTER_SORTED_BED"
         SORT_FLAG="--sortRegions no"
         SKIP_ZEROS_FLAG=""
-        echo "  Using m6A-sorted regions for consistent row order"
     else
         CURRENT_REGIONS="$REGIONS_BED"
         SORT_FLAG=""
         SKIP_ZEROS_FLAG="--skipZeros"
-        echo "  Using original regions with --skipZeros (will set sort order for other marks)"
     fi
     
     MATRIX_FILE="$HEATMAP_DIR/${SAMPLE_NAME}.${REGIONS_BASENAME}.${mark}.matrix.gz"

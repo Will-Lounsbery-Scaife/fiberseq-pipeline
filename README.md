@@ -24,9 +24,6 @@ https://www.biorxiv.org/content/10.1101/2024.06.14.599122v2
 https://fiberseq.github.io/fire/fire.html
 
 
-### Disclaimer
-
-I used Claude Code to help generate some of the documentation for this pipeline. I'm also using Claude Code in the development of the nextflow version of the pipeline.
 
 ---
 
@@ -215,7 +212,7 @@ Edit `part1_scripts/02_add_nucleosomes_wrapper.sh`:
 
 ```bash
 SAMPLESHEET="/path/to/config/samples.tsv"
-WORKDIR="/path/to/output/directory"  # Same as Step 1
+WORKDIR="/path/to/output/directory"
 THREADS=48
 FT_OPTIONS=""  # Optional fibertools parameters
 ```
