@@ -1,0 +1,145 @@
+# =============================================================================
+# FIBER-SEQ PIPELINE PARAMETERS TEMPLATE
+# =============================================================================
+# Copy this file and customize for your analysis:
+#   cp params_template.yaml my_analysis.yaml
+#   vim my_analysis.yaml
+#
+# Run with:
+#   nextflow run main.nf -profile singularity,minerva -params-file my_analysis.yaml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# INPUT/OUTPUT (Required)
+# -----------------------------------------------------------------------------
+input: null                      # Path to samplesheet TSV (sample_name, bam_path, tissue, sequencer)
+outdir: null                     # Output directory
+
+# -----------------------------------------------------------------------------
+# REFERENCE GENOME (Required)
+# -----------------------------------------------------------------------------
+fasta: null                      # Reference genome FASTA
+fasta_index: null                # Pre-built MMI index (optional, saves time)
+chrom_sizes: null                # Chromosome sizes file (required for bigWig)
+
+# -----------------------------------------------------------------------------
+# STEP 1: ALIGNMENT (pbmm2)
+# -----------------------------------------------------------------------------
+skip_alignment: false            # Skip alignment (input BAMs are pre-aligned)
+pbmm2_preset: "HIFI"             # Options: SUBREAD, CCS, HIFI, ISOSEQ, UNROLLED
+
+# -----------------------------------------------------------------------------
+# STEP 2: NUCLEOSOME CALLING (fibertools add-nucleosomes)
+# -----------------------------------------------------------------------------
+ft_nucleosome_options: ""        # Additional options (e.g., "--min-ml-score 150")
+
+# -----------------------------------------------------------------------------
+# STEP 3: QC
+# -----------------------------------------------------------------------------
+run_sequencing_qc: false         # Run PacBio sequencing QC (requires SMRT Tools)
+run_fiberseq_qc: false           # Run fiberseq-qc suite (requires tcsh + fiberseq-qc)
+
+# -----------------------------------------------------------------------------
+# STEP 4: PILEUP (fibertools pileup)
+# -----------------------------------------------------------------------------
+pileup_region: null              # Optional region subset (e.g., "chr1:1-100000")
+ml_threshold: 220                # ML score threshold for m6A/5mC filtering
+ft_pileup_options: ""            # Additional options (e.g., "-v")
+
+# -----------------------------------------------------------------------------
+# STEP 5: BIGWIG GENERATION
+# -----------------------------------------------------------------------------
+marks: "m6a,nuc,cpg"             # Comma-separated marks to generate bigWigs for
+                                 # Options: m6a, nuc, cpg, fire, msp
+
+# -----------------------------------------------------------------------------
+# STEP 6: HEATMAPS (deepTools)
+# -----------------------------------------------------------------------------
+regions_bed: null                # BED file defining regions (null = skip heatmaps)
+
+# Matrix computation mode
+matrix_mode: "reference-point"   # Options: "reference-point" or "scale-regions"
+
+# reference-point mode settings
+reference_point: "center"        # Options: center, TSS, TES
+upstream: 3000                   # Distance upstream of reference point (bp)
+downstream: 3000                 # Distance downstream of reference point (bp)
+
+# scale-regions mode settings
+region_body_length: 5000         # Length to scale region body to (bp)
+scale_upstream: 3000             # Distance upstream for scale-regions
+scale_downstream: 3000           # Distance downstream for scale-regions
+
+# Heatmap appearance
+heatmap_height: 20               # Heatmap height
+heatmap_width: 10                # Heatmap width
+heatmap_colormap_m6a: "Greens"   # Colormap for m6A
+heatmap_colormap_nuc: "Blues"    # Colormap for nucleosomes
+heatmap_colormap_cpg: "Reds"     # Colormap for CpG
+
+# -----------------------------------------------------------------------------
+# STEP 7: CHROMOSOME FILTERING
+# -----------------------------------------------------------------------------
+filter_chromosomes: null         # Space-separated list (e.g., "chr1 chr2 chr3 ... chrY")
+                                 # null = keep all chromosomes
+
+# -----------------------------------------------------------------------------
+# STEP 8: K-MER PHASING (Snakemake workflow)
+# -----------------------------------------------------------------------------
+run_kmer_phasing: false          # Enable k-mer variant phasing
+kmer_use_filtered: false         # Use filtered BAM from step 7 (requires filter_chromosomes)
+kmer_align: false                # Perform alignment in k-mer phasing (false if already aligned)
+resume_kmer_phasing: false       # Resume incomplete Snakemake run
+
+# Parental phasing (optional)
+kmer_parental_mode: false        # Enable parental data for phasing
+kmer_maternal_bam: null          # Path to maternal sequencing data (bam/cram/fa/fq)
+kmer_paternal_bam: null          # Path to paternal sequencing data (bam/cram/fa/fq)
+
+# -----------------------------------------------------------------------------
+# STEP 9: FIRE PEAK CALLING (Snakemake workflow)
+# -----------------------------------------------------------------------------
+run_fire: false                  # Enable FIRE peak calling
+fire_input_source: "nucleosomes" # Input: "nucleosomes" (step 2) or "kmer_phasing" (step 8)
+fire_ref_name: "hg38"            # UCSC genome name for track hub (hg38, mm10, etc.)
+
+# Optional FIRE settings
+fire_ont: false                  # Set true for ONT Fiber-seq data (default: PacBio)
+fire_max_threads: null           # Max threads for distributed steps
+fire_keep_chromosomes: null      # Regex filter (e.g., "chr[0-9XY]+$" for standard chroms)
+fire_excludes: null              # List of BED files to exclude from null distribution
+                                 # (not needed for hg38 - defaults load automatically)
+fire_min_contig_length: 0        # Skip contigs smaller than this (bp)
+
+# FIRE peak calling thresholds (null = use FIRE defaults)
+fire_max_peak_fdr: null          # FDR for FIRE peaks (default: 0.05)
+fire_min_fire_fdr: null          # FDR for individual elements (default: 0.10)
+fire_min_coverage: null          # Min coverage for peaks (default: 4)
+fire_coverage_within_n_sd: null  # Filter peaks beyond N SDs from mean (default: 5)
+fire_min_msp: null               # Min MSPs per read (default: 10)
+fire_min_ave_msp_size: null      # Min average MSP size (default: 10)
+
+# Advanced FIRE options (developer)
+fire_min_per_acc_peak: null      # Min fraction actuated, bypasses FDR (default: 0.0)
+fire_min_frac_accessible: null   # Additional % actuation filter (default: 0.0)
+
+# -----------------------------------------------------------------------------
+# SNAKEMAKE WORKFLOW SETTINGS (for steps 8 and 9)
+# -----------------------------------------------------------------------------
+kmer_pixi_manifest: null         # pixi.toml for k-mer phasing (from k-mer-variant-phasing repo)
+kmer_snakemake_profile: null     # Snakemake profile for k-mer phasing (e.g., profiles/lsf-executor)
+fire_pixi_manifest: null         # pixi.toml for FIRE (from FIRE repo)
+fire_snakemake_profile: null     # Snakemake profile for FIRE (e.g., profiles/lsf-executor)
+
+# -----------------------------------------------------------------------------
+# TOOL PATHS (for HPC without containers)
+# -----------------------------------------------------------------------------
+smrt_root: null                  # SMRT Tools installation path
+fiberseq_qc_root: null           # fiberseq-qc installation path
+
+# -----------------------------------------------------------------------------
+# RESOURCE LIMITS
+# -----------------------------------------------------------------------------
+max_cpus: 16
+max_memory: "128.GB"
+max_time: "72.h"

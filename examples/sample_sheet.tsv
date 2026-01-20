@@ -1,0 +1,3 @@
+sample_name	raw_bam_path	tissue	sequencer
+sample1	/path/to/sample1.hifi.bam	K562	Revio
+sample2	/path/to/sample2.hifi.bam	HepG2	Sequel2

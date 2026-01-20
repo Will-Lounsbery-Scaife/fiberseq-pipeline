@@ -1,0 +1,49 @@
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/
+results/
+
+# Singularity/Apptainer containers
+*.sif
+*.simg
+*.img
+
+# Test outputs
+*_test_run/
+
+# Environment files
+*.conda/
+__pycache__/
+.pixi/
+.snakemake/
+
+# Config files with user-specific paths
+*_params.yaml
+!params_template.yaml
+test_samples.tsv
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+
+# Claude files
+.claude
+.claude/*
+CLAUDE.md

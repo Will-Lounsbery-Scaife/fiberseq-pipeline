@@ -1,0 +1,61 @@
+#!/bin/bash
+#BSUB -J fiberseq_pipeline
+#BSUB -P ${LSF_PROJECT}           # CONFIGURE: Your LSF project/account
+#BSUB -q normal                   # CONFIGURE: Your queue name
+#BSUB -n 4
+#BSUB -W 72:00
+#BSUB -R "rusage[mem=16000]"
+#BSUB -o logs/fiberseq_pipeline_%J.stdout
+#BSUB -e logs/fiberseq_pipeline_%J.stderr
+
+# =============================================================================
+# IMPORTANT: First run pull_containers.sh from a LOGIN NODE to cache containers
+# =============================================================================
+# The proxy is only accessible from login nodes, not compute nodes.
+# Run this ONCE from a login node before submitting this job:
+#
+#   bash pull_containers.sh
+#
+# =============================================================================
+
+# =============================================================================
+# PROXY SETUP (if needed for Nextflow's own downloads - plugins, etc.)
+# =============================================================================
+# CONFIGURE: Uncomment and set if your HPC requires proxy for internet access
+# export http_proxy=http://your-proxy.institution.edu:3128
+# export https_proxy=http://your-proxy.institution.edu:3128
+
+# =============================================================================
+# SINGULARITY CACHE SETUP
+# =============================================================================
+# CONFIGURE: Set to your shared cache directory
+SINGULARITY_CACHE="${NXF_SINGULARITY_CACHEDIR:-${HOME}/.singularity/cache}"
+export SINGULARITY_CACHEDIR="${SINGULARITY_CACHE}"
+export SINGULARITY_LOCALCACHEDIR="${SINGULARITY_CACHE}"
+export SINGULARITY_PULLFOLDER="${SINGULARITY_CACHE}/pull"
+export SINGULARITY_TMPDIR="${SINGULARITY_CACHE}/tmp"
+export NXF_SINGULARITY_CACHEDIR="${SINGULARITY_CACHE}"
+
+# =============================================================================
+# ENVIRONMENT SETUP
+# =============================================================================
+# CONFIGURE: Adjust module loads and conda activation for your environment
+ml singularity 2>/dev/null || module load singularity 2>/dev/null || true
+
+# CONFIGURE: Set path to your conda/mamba installation
+# source ~/miniforge3/etc/profile.d/conda.sh
+# conda activate nextflow
+
+# Create logs directory if needed
+mkdir -p logs
+
+# =============================================================================
+# RUN PIPELINE
+# =============================================================================
+# CONFIGURE: Update the path to your pipeline directory and params file
+PIPELINE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+nextflow run "${PIPELINE_DIR}/main.nf" \
+    -profile singularity \
+    -params-file params_template.yaml \
+    -resume
