@@ -1,22 +1,30 @@
 # Fiber-seq Nextflow Pipeline
 
-A Nextflow pipeline for processing PacBio HiFi fiber-seq data through alignment, nucleosome calling, pileup generation, bigWig conversion, heatmap visualization, and advanced analysis (k-mer phasing, FIRE peak calling).
+## Pipeline Steps
 
-## Requirements
+### Part 1: Core Processing
 
-- **Nextflow** >= 23.04.0
-- **Singularity** or **Docker**
-- **Reference genome** FASTA file
-- **Chromosome sizes** file
+| Step | Process | Description |
+|------|---------|-------------|
+| 1 | PBMM2_INDEX | Create reference index (runs once) |
+| 1 | PBMM2_ALIGN | Align reads with pbmm2 |
+| 1b | SEQUENCING_QC | PacBio sequencing QC |
+| 2 | FIBERTOOLS_ADD_NUCLEOSOMES | Call nucleosomes/MSPs with fibertools |
+| 2b | SAMTOOLS_INDEX | Index ft.bam files |
+| 3 | FIBERSEQ_QC | Fiber-seq QC metrics |
+| 4 | FIBERTOOLS_PILEUP | Create pileup files |
+| 5a | PILEUP_TO_BEDGRAPH | Convert pileups to bedGraph |
+| 5b | BEDGRAPH_TO_BIGWIG | Convert bedGraph to bigWig |
+| 6a | COMPUTE_MATRIX | deepTools matrix computation |
+| 6b | PLOT_HEATMAP | Generate heatmaps |
 
-## Input Samplesheet
+### Part 2: Advanced Analysis
 
-TSV file with 4 columns (no header):
-
-```
-sample_name    raw_bam_path    tissue    sequencer
-sample1        /path/to/sample1.hifi.bam    brain    Revio
-```
+| Step | Process | Description |
+|------|---------|-------------|
+| 7 | SAMTOOLS_FILTER_CHROMS | Filter BAM to specific chromosomes |
+| 8 | KMER_PHASING | k-mer variant phasing (Snakemake wrapper) |
+| 9 | FIRE | FIRE peak calling (Snakemake wrapper) |
 
 ## Execution DAG
 
@@ -52,86 +60,3 @@ FIBERSEQ_QC   FIBERTOOLS_PILEUP   SAMTOOLS_FILTER_CHROMS
                     ↓
               PLOT_HEATMAP
 ```
-
-## Parameters
-
-### Required
-
-| Parameter | Description |
-|-----------|-------------|
-| `--input` | Path to samplesheet TSV |
-| `--fasta` | Path to reference genome FASTA |
-| `--outdir` | Output directory |
-| `--chrom_sizes` | Chromosome sizes file (required for bigWig) |
-
-### Reference & Alignment
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--fasta_index` | null | Pre-built MMI index (skips indexing) |
-| `--skip_alignment` | false | Skip alignment (use pre-aligned BAMs) |
-| `--pbmm2_preset` | HIFI | Preset: SUBREAD, CCS, HIFI, ISOSEQ |
-
-### Pileup & BigWig
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--pileup_region` | null | Region to pileup (chr:start-end) |
-| `--marks` | m6a,nuc,cpg | Marks to extract for bigWig |
-
-### Heatmaps
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--regions_bed` | null | BED file for heatmaps (enables heatmap generation) |
-| `--matrix_mode` | reference-point | Mode: reference-point or scale-regions |
-| `--reference_point` | center | Reference point: center, TSS, TES |
-| `--upstream` | 2000 | Upstream distance (bp) |
-| `--downstream` | 2000 | Downstream distance (bp) |
-
-### Part 2: Chromosome Filtering
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--filter_chromosomes` | null | Space-separated chromosome list |
-
-### Part 2: K-mer Phasing
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--run_kmer_phasing` | false | Enable k-mer phasing |
-| `--kmer_pixi_manifest` | null | pixi.toml from k-mer-variant-phasing repo |
-| `--kmer_snakemake_profile` | null | Snakemake profile path |
-| `--kmer_use_filtered` | false | Use filtered BAM from step 7 |
-
-### Part 2: FIRE Peak Calling
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--run_fire` | false | Enable FIRE peak calling |
-| `--fire_pixi_manifest` | null | pixi.toml from FIRE repo |
-| `--fire_snakemake_profile` | null | Snakemake profile path |
-| `--fire_input_source` | nucleosomes | Input: "nucleosomes" or "kmer_phasing" |
-| `--fire_ref_name` | hg38 | UCSC genome name for track hub |
-| `--fire_keep_chromosomes` | null | Regex filter (e.g., "chr[0-9XY]+$") |
-
-### QC
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--run_sequencing_qc` | false | Run PacBio sequencing QC |
-| `--run_fiberseq_qc` | false | Run fiberseq-qc suite |
-| `--smrt_root` | null | SMRT Tools installation path |
-| `--fiberseq_qc_root` | null | fiberseq-qc installation path |
-
-## Profiles
-
-| Profile | Description |
-|---------|-------------|
-| `singularity` | Enable Singularity containers |
-| `docker` | Enable Docker containers |
-| `lsf` | Generic LSF scheduler |
-| `slurm` | Generic SLURM scheduler |
-| `test` | Minimal resources for testing |
-
-Combine profiles: `-profile singularity,lsf`
