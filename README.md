@@ -1,6 +1,8 @@
 # Fiberseq Pipeline
 
-A complete shell-based pipeline for processing and analyzing PacBio HiFi fiber-seq data, from raw BAM files to publication-quality heatmaps.
+A complete shell-based pipeline for processing and analyzing PacBio HiFi fiber-seq data, from raw BAM files to publication-quality heatmaps. 
+
+The nextflow_pipeline directory contains a nextflow version, which is still under development.
 
 ---
 
@@ -21,6 +23,10 @@ FIRE ("Fiber-seq Inferred Regulatory Elements") is a peak-calling and annotation
 https://www.biorxiv.org/content/10.1101/2024.06.14.599122v2
 https://fiberseq.github.io/fire/fire.html
 
+
+### Disclaimer
+
+I used Claude Code to help generate some of the documentation for this pipeline. I'm also using Claude Code in the development of the nextflow version of the pipeline.
 
 ---
 
@@ -139,7 +145,6 @@ sample3	/path/to/sample3.bam	brain	revio
 
 **Reference genome:**
 ```bash
-# You should already have your reference FASTA
 REFERENCE_FASTA="/path/to/reference.fa"
 ```
 
@@ -156,12 +161,6 @@ cut -f1,2 reference.fa.fai > reference.chrom.sizes
 # Format: chr  start  end  name  score  strand
 chr1    1000000    1000001    gene1    .    +
 chr1    2000000    2000001    gene2    .    -
-```
-
-### 3. Make Scripts Executable
-
-```bash
-chmod +x part1_scripts/*.sh part2_scripts/*.sh
 ```
 
 ---
