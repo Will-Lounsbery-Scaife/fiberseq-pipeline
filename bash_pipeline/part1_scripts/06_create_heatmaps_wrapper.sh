@@ -29,7 +29,7 @@ M6A_COLORMAP="Greens"
 NUCLEOSOME_COLORMAP="Blues"
 CPG_COLORMAP="Reds"
 COMBINED_COLORMAP="RdYlBu_r"
-MARKS_TO_PLOT=("perc_m6a" "perc_nuc" "perc_cpg")  # m6A must be first - it sets row order for all heatmaps
+MARKS_TO_PLOT=("perc_m6a" "perc_nuc" "perc_cpg")
 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

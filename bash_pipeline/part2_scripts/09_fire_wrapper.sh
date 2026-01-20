@@ -7,16 +7,16 @@
 # Load singularity module (adjust for your HPC)
 ml singularity 2>/dev/null || module load singularity 2>/dev/null || true
 
-### CONFIGURE: Set these paths for your environment ###
-SAMPLESHEET=""              # CONFIGURE: Path to your samplesheet TSV file
-WORKDIR=""                  # CONFIGURE: Base output directory (same as step 1)
-REFERENCE_FASTA=""          # CONFIGURE: Path to reference genome FASTA
-FIRE_ROOT=""                # CONFIGURE: Path to FIRE installation
-TMPDIR="${TMPDIR:-/tmp}"    # Uses system TMPDIR or /tmp as fallback
-SNAKEMAKE_CONDA_PREFIX=""   # CONFIGURE: Path for Snakemake conda environments
-KEEP_CHROMOSOMES=""         # Chromosome filter regex (leave blank for all chromosomes); "chr21" for chr21 only, "chr[0-9XY]+$" for standard chromosomes
-REF_NAME="hg38"             # Reference name for UCSC track hub (use valid UCSC genome name)
-INPUT_SOURCE="kmer_phasing" # Input source: "kmer_phasing" or "nucleosomes"
+### CONFIGURE ###
+SAMPLESHEET=""
+WORKDIR=""
+REFERENCE_FASTA=""
+FIRE_ROOT=""
+TMPDIR="${TMPDIR:-/tmp}"
+SNAKEMAKE_CONDA_PREFIX=""
+KEEP_CHROMOSOMES=""
+REF_NAME="hg38"
+INPUT_SOURCE="kmer_phasing"
 
 # Peak calling thresholds (leave blank for FIRE defaults)
 MAX_PEAK_FDR=""             # FDR threshold for FIRE peaks (default: 0.05); increase for more peaks
@@ -26,17 +26,7 @@ COVERAGE_WITHIN_N_SD=""     # Filter peaks beyond N SDs from mean coverage (defa
 MIN_MSP=""                  # Minimum MSPs per Fiber-seq read (default: 10)
 MIN_AVE_MSP_SIZE=""         # Minimum average MSP size (default: 10)
 
-### VALIDATION ###
-if [[ -z "$SAMPLESHEET" || -z "$WORKDIR" || -z "$REFERENCE_FASTA" || -z "$FIRE_ROOT" ]]; then
-    echo "ERROR: Required variables not configured. Edit this script and set:"
-    echo "  - SAMPLESHEET: Path to your samplesheet TSV"
-    echo "  - WORKDIR: Base output directory"
-    echo "  - REFERENCE_FASTA: Path to reference genome FASTA"
-    echo "  - FIRE_ROOT: Path to FIRE installation"
-    exit 1
-fi
 
-### AUTO ###
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN="${SCRIPT_DIR}/09_fire_main.sh"
 CONFIG_DIR="${SCRIPT_DIR}/config"
@@ -50,16 +40,6 @@ SNAKEMAKE_CONDA_PREFIX="${SNAKEMAKE_CONDA_PREFIX:-${FIRE_ROOT}/.snakemake_conda_
 mkdir -p "$TMPDIR" "$CONFIG_DIR" "$MANIFEST_DIR" "$SNAKEMAKE_CONDA_PREFIX"
 export TMPDIR SNAKEMAKE_CONDA_PREFIX
 
-echo "=== FIRE Pipeline ==="
-echo "Samplesheet: $SAMPLESHEET"
-echo "Workdir: $WORKDIR"
-echo "Reference: $REFERENCE_FASTA"
-echo "Reference name: $REF_NAME"
-echo "FIRE root: $FIRE_ROOT"
-echo "Conda prefix: $SNAKEMAKE_CONDA_PREFIX"
-echo "Input source: $INPUT_SOURCE"
-echo "Keep chromosomes: ${KEEP_CHROMOSOMES:-all}"
-echo "Peak calling params: max_peak_fdr=${MAX_PEAK_FDR:-0.05} min_fire_fdr=${MIN_FIRE_FDR:-0.10} min_coverage=${MIN_COVERAGE:-4}"
 
 tail -n +2 "$SAMPLESHEET" | while IFS=$'\t' read -r sample_name raw_bam_path tissue sequencer; do
     [[ -z "$sample_name" ]] && continue
@@ -105,11 +85,6 @@ tail -n +2 "$SAMPLESHEET" | while IFS=$'\t' read -r sample_name raw_bam_path tis
         [[ -n "$MIN_AVE_MSP_SIZE" ]] && echo "min_ave_msp_size: ${MIN_AVE_MSP_SIZE}"
     } > "$CONFIG_FILE"
 
-    echo "--- Processing: $sample_name ---"
-    echo "Input BAM: $INPUT_BAM"
-    echo "Output dir: $OUTPUT_DIR"
-    echo "Config: $CONFIG_FILE"
-    echo "Manifest: $MANIFEST_FILE"
 
     bash "$MAIN" "$sample_name" "$OUTPUT_DIR" "$CONFIG_FILE" "$PIXI_MANIFEST" "$PROFILE_PATH"
     [[ $? -ne 0 ]] && echo "ERROR: Failed for $sample_name" || echo "Done: $sample_name"

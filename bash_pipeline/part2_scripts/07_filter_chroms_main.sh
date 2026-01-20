@@ -6,24 +6,15 @@ SAMPLE_DIR=$2
 CHROMOSOMES=$3
 FILTER_THREADS=${4:-8}
 
-echo "[Filter Chromosomes] ${SAMPLE_NAME} ($(date))"
-
-# Locate input BAM (from nucleosomes step)
 SOURCE_BAM="${SAMPLE_DIR}/02_nucleosomes/${SAMPLE_NAME}.ft.bam"
 
-# Setup output
 OUTPUT_DIR="${SAMPLE_DIR}/07_filter_chroms"
 mkdir -p "$OUTPUT_DIR"
 FILTERED_BAM="${OUTPUT_DIR}/${SAMPLE_NAME}.filtered.bam"
 
-echo "Filtering BAM..."
-echo "  Input:  $SOURCE_BAM"
-echo "  Output: $FILTERED_BAM"
-echo "  Chromosomes: ${CHROMOSOMES:-all}"
 
 # Filter BAM to specified chromosomes (empty CHROMOSOMES keeps all)
 if [[ -n "$CHROMOSOMES" ]]; then
-    # 1. Create a temporary BAM with filtered READS (header is still dirty here)
     TEMP_BAM="${OUTPUT_DIR}/${SAMPLE_NAME}.tmp.bam"
     samtools view -@ "$FILTER_THREADS" -b -h "$SOURCE_BAM" $CHROMOSOMES > "$TEMP_BAM"
     
@@ -33,33 +24,23 @@ if [[ -n "$CHROMOSOMES" ]]; then
         rm -f "$TEMP_BAM"
         exit 1
     fi
-
-    # 2. ### HEADER CLEANING ###
-    # We must remove @SQ lines for chromosomes that are not in our list
-    echo "  Cleaning BAM header..."
     
-    # Dump the full header to a temporary file
     FULL_HEADER="${OUTPUT_DIR}/${SAMPLE_NAME}.full_header.sam"
     CLEAN_HEADER="${OUTPUT_DIR}/${SAMPLE_NAME}.clean_header.sam"
     samtools view -H "$TEMP_BAM" > "$FULL_HEADER"
 
-    # A. Keep all lines that are NOT @SQ lines (HD, PG, RG, etc.)
     grep -v "^@SQ" "$FULL_HEADER" > "$CLEAN_HEADER"
 
-    # B. Append only the @SQ lines for the requested chromosomes
-    # We look for lines containing "SN:chrName<TAB>" to ensure exact matches
     for chrom in $CHROMOSOMES; do
         grep -P "\tSN:${chrom}\t" "$FULL_HEADER" >> "$CLEAN_HEADER"
     done
 
-    # 3. Apply the clean header to the BAM
     samtools reheader "$CLEAN_HEADER" "$TEMP_BAM" > "$FILTERED_BAM"
     
-    # Cleanup temp files
     rm -f "$TEMP_BAM" "$FULL_HEADER" "$CLEAN_HEADER"
 
 else
-    # If no chromosomes provided, just copy with samtools view (Header remains full)
+    # If no chromosomes provided, just copy with samtools view
     samtools view -@ "$FILTER_THREADS" -b -h "$SOURCE_BAM" > "$FILTERED_BAM"
 fi
 

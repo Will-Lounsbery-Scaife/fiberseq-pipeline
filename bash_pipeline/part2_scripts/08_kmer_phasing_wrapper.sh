@@ -6,34 +6,24 @@
 ml singularity 2>/dev/null || module load singularity 2>/dev/null || true
 
 ### CONFIGURE: Set these paths for your environment ###
-SAMPLESHEET=""              # CONFIGURE: Path to your samplesheet TSV file
-WORKDIR=""                  # CONFIGURE: Base output directory (same as step 1)
-REFERENCE_FASTA=""          # CONFIGURE: Path to reference genome FASTA
-KMER_PHASING_ROOT=""        # CONFIGURE: Path to k-mer-variant-phasing installation
-TMPDIR="${TMPDIR:-/tmp}"    # Uses system TMPDIR or /tmp as fallback
-SNAKEMAKE_CONDA_PREFIX=""   # CONFIGURE: Path for Snakemake conda environments
-APPTAINER_CACHEDIR=""       # CONFIGURE: Path for Apptainer/Singularity cache
+SAMPLESHEET=""
+WORKDIR=""
+REFERENCE_FASTA=""
+KMER_PHASING_ROOT=""
+TMPDIR="${TMPDIR:-/tmp}"
+SNAKEMAKE_CONDA_PREFIX=""
+APPTAINER_CACHEDIR=""
 
-ALIGN="false"               # Alignment option (set to false if alignment was done in step 01)
-FILTERED_CHR="false"        # whether to use filtered chromosomes BAMs from Step 7 (07_filter_chroms)
-RESUME="false"              # Set to "true" to resume a failed/incomplete snakemake run
+ALIGN="false"
+FILTERED_CHR="false"
+RESUME="false"
 
 # Parental data options (set to empty string "" if no parental data available)
-PARENTAL_MODE="false"       # Set to "true" if you have parental data for k-mer phasing
-MATERNAL_BAM=""             # Path to maternal sequencing data (bam/cram/fa/fq)
-PATERNAL_BAM=""             # Path to paternal sequencing data (bam/cram/fa/fq)
+PARENTAL_MODE="false"
+MATERNAL_BAM=""
+PATERNAL_BAM=""
 
-### VALIDATION ###
-if [[ -z "$SAMPLESHEET" || -z "$WORKDIR" || -z "$REFERENCE_FASTA" || -z "$KMER_PHASING_ROOT" ]]; then
-    echo "ERROR: Required variables not configured. Edit this script and set:"
-    echo "  - SAMPLESHEET: Path to your samplesheet TSV"
-    echo "  - WORKDIR: Base output directory"
-    echo "  - REFERENCE_FASTA: Path to reference genome FASTA"
-    echo "  - KMER_PHASING_ROOT: Path to k-mer-variant-phasing installation"
-    exit 1
-fi
 
-### AUTO ###
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN="${SCRIPT_DIR}/08_kmer_phasing_main.sh"
 CONFIG_DIR="${SCRIPT_DIR}/config"
@@ -46,18 +36,6 @@ APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-${KMER_PHASING_ROOT}/.apptainer_cache}
 
 mkdir -p "$TMPDIR" "$CONFIG_DIR" "$SNAKEMAKE_CONDA_PREFIX" "$APPTAINER_CACHEDIR"
 export TMPDIR SNAKEMAKE_CONDA_PREFIX APPTAINER_CACHEDIR
-
-echo "=== k-mer Variant Phasing Pipeline ==="
-echo "Samplesheet: $SAMPLESHEET"
-echo "Workdir: $WORKDIR"
-echo "Reference: $REFERENCE_FASTA"
-echo "k-mer phasing root: $KMER_PHASING_ROOT"
-echo "Conda prefix: $SNAKEMAKE_CONDA_PREFIX"
-echo "Apptainer cache: $APPTAINER_CACHEDIR"
-echo "Parental mode: $PARENTAL_MODE"
-echo "Align: $ALIGN"
-echo "Use filtered chromosomes BAM: $FILTERED_CHR"
-echo "Resume mode: $RESUME"
 
 tail -n +2 "$SAMPLESHEET" | while IFS=$'\t' read -r sample_name raw_bam_path tissue sequencer; do
     [[ -z "$sample_name" ]] && continue
